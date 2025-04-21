@@ -58,7 +58,7 @@ def get_ip():
 @app.route('/')
 def index_route():
     ip_address = get_ip()
-    return render_template('index.html', stations=STATIONS, ip_address=ip_address)
+    return render_template('index.html', stations=STATIONS, ip_address=ip_address, port=FLASK_PORT)
 
 @app.route('/play/<station>')
 def play_route(station):

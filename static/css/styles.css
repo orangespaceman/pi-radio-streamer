@@ -46,14 +46,14 @@ body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 16px;
     font-family: monospace;
     color: #666;
 }
 
 .UpdateProgress {
-    width: 100px;
-    height: 4px;
+    width: 200px;
+    height: 8px;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 2px;
     overflow: hidden;
@@ -74,7 +74,6 @@ body {
 /* Bottom bar */
 
 .BottomBar {
-    padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -82,7 +81,7 @@ body {
 
 .BottomBar-left,
 .BottomBar-right {
-    width: 56px;
+    width: 112px;
 }
 
 .BottomBar-center {
@@ -141,10 +140,10 @@ body {
 .NavButton {
     background: none;
     border: none;
-    padding: 12px;
+    padding: 24px;
     cursor: pointer;
     display: none;
-    width: 56px;
+    width: 112px;
 }
 
 .NavButton.is-visible {
@@ -154,8 +153,8 @@ body {
 .NavButton svg {
     fill: #666;
     transition: fill 0.2s;
-    width: 32px;
-    height: 32px;
+    width: 64px;
+    height: 64px;
 }
 
 .NavButton:hover svg {
@@ -213,13 +212,13 @@ body {
     align-items: center;
     width: 100%;
     max-width: 200px;
-    min-height: 50px;
+    min-height: 100px;
     aspect-ratio: auto;
 }
 
 .Button--stop svg {
-    width: 32px;
-    height: 32px;
+    width: 64px;
+    height: 64px;
 }
 
 .Button--stop:hover {
@@ -237,14 +236,14 @@ body {
 /* Loading spinner */
 .Button-spinner {
     display: none;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    width: 40px;
+    height: 40px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: #fff;
     animation: spin 1s ease-in-out infinite;
     position: absolute;
-    right: 15px;
+    right: 30px;
     top: 50%;
     transform: translateY(-50%);
 }
@@ -262,12 +261,12 @@ body {
 /* Status messages */
 .Status {
     position: fixed;
-    bottom: 90px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    padding: 10px 20px;
-    border-radius: 4px;
+    padding: 20px 40px;
+    border-radius: 8px;
     display: none;
     z-index: 100;
 }
@@ -339,12 +338,12 @@ body {
 }
 
 .NowPlaying-track {
-    font-size: 24px;
+    font-size: 32px;
     color: #333;
 }
 
 .NowPlaying-artist {
-    font-size: 18px;
+    font-size: 26px;
     color: #666;
 }
 
@@ -352,7 +351,7 @@ body {
 .NowPlaying-playlist,
 .NowPlaying-release-date {
     display: none;
-    font-size: 14px;
+    font-size: 20px;
     color: #888;
     font-style: italic;
 }
@@ -365,11 +364,11 @@ body {
 
 .NowPlaying-source.badge {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 8px 24px;
     border-radius: 16px;
     background-color: #ddd;
     color: #666;
-    font-size: 12px;
+    font-size: 20px;
     text-transform: uppercase;
     margin-top: 8px;
 }
