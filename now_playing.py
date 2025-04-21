@@ -27,6 +27,10 @@ class NowPlaying:
             'SpotifyService': SpotifyService(cast)
         }
 
+    def clear_current_track(self):
+        self.current_track = None
+        self.last_update = None
+
     def cache_image(self, url, file_name):
         """Download and cache an image file"""
         if not url:

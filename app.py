@@ -151,6 +151,7 @@ def stop_route():
         cast.wait()
         success_msg = 'Playback stopped'
         logger.info(success_msg)
+        now_playing.clear_current_track()
         return jsonify({'success': True, 'message': success_msg})
     except Exception as e:
         error_msg = f'Error stopping playback: {str(e)}'
