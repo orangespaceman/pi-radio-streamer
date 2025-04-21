@@ -1,0 +1,5 @@
+Flask==3.0.2
+pychromecast==13.1.0
+requests==2.31.0
+python-dotenv==1.0.1
+spotipy==2.25.0

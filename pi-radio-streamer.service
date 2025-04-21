@@ -1,0 +1,15 @@
+[Unit]
+Description=Pi Radio Streamer - Chromecast Radio Streaming Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/pi-radio-streamer
+Environment=PATH=/home/pi/pi-radio-streamer/env/bin
+ExecStart=/home/pi/pi-radio-streamer/env/bin/python app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
