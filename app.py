@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from now_playing import NowPlaying
 from pychromecast.controllers.bbcsounds import BbcSoundsController
 from config.stations import STATIONS
+import time
 
 # Load environment variables
 load_dotenv()
@@ -104,7 +105,10 @@ def play_station_route(station):
                     'images': [{'url': station_info['image']}]
                 }
             )
-            return jsonify({'success': True, 'message': f'Playing {station_info["name"]}'})
+            track_info = now_playing.to_dict()
+            track_info['success'] = True
+            track_info['message'] = f'Playing {station_info["name"]}'
+            return jsonify(track_info)
 
         # For other stations (FIP, TalkSport), use standard media player
         media = {
@@ -127,9 +131,10 @@ def play_station_route(station):
                      stream_type=media['stream_type'],
                      metadata=media['metadata'])
         mc.block_until_active()
-        success_msg = f'Playing {station_info["name"]}'
-        logger.info(success_msg)
-        return jsonify({'success': True, 'message': success_msg})
+        track_info = now_playing.to_dict()
+        track_info['success'] = True
+        track_info['message'] = f'Playing {station_info["name"]}'
+        return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error playing {station}: {str(e)}'
         logger.error(error_msg, exc_info=True if DEBUG else False)
@@ -149,10 +154,11 @@ def stop_route():
         mc.stop()
         cast.quit_app()
         cast.wait()
-        success_msg = 'Playback stopped'
-        logger.info(success_msg)
         now_playing.clear_current_track()
-        return jsonify({'success': True, 'message': success_msg})
+        track_info = now_playing.to_dict()
+        track_info['success'] = True
+        track_info['message'] = 'Playback stopped'
+        return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error stopping playback: {str(e)}'
         logger.error(error_msg, exc_info=True if DEBUG else False)
@@ -187,11 +193,41 @@ def update_playback(action):
             return jsonify({'error': error_msg}), 404
 
         logger.debug("Update playback")
+
+        # Get initial state
+        initial_state = cast.media_controller.status.player_is_playing if cast.media_controller.status else False
+        initial_content_id = str(cast.media_controller.status.content_id or '').lower() if cast.media_controller.status else None
+
+        # Perform the action
         action()
         cast.wait()
-        success_msg = 'Playback updated'
-        logger.info(success_msg)
-        return jsonify({'success': True, 'message': success_msg})
+
+        # Wait up to 1 second for state to change
+        max_attempts = 10
+        attempt = 0
+        while attempt < max_attempts:
+            current_state = cast.media_controller.status.player_is_playing if cast.media_controller.status else False
+            current_content_id = str(cast.media_controller.status.content_id or '').lower() if cast.media_controller.status else None
+
+            # For prev/next, wait for content_id to change
+            if action in [cast.media_controller.queue_next, cast.media_controller.queue_prev]:
+                if current_content_id != initial_content_id:
+                    # Wait a bit more for metadata to update
+                    time.sleep(0.2)
+                    break
+            # For play/pause, wait for player state to change
+            elif current_state != initial_state:
+                break
+
+            time.sleep(0.1)
+            attempt += 1
+
+        # For prev/next, force a refresh to get new track info
+        skip_api_refresh = action not in [cast.media_controller.queue_next, cast.media_controller.queue_prev]
+        track_info = now_playing.to_dict(skip_api_refresh=skip_api_refresh)
+        track_info['success'] = True
+        track_info['message'] = 'Playback updated'
+        return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error updating playback: {str(e)}'
         logger.error(error_msg, exc_info=True if DEBUG else False)
@@ -204,7 +240,7 @@ def now_playing_route():
         if not cast or not now_playing:
             logger.debug("No active playback")
             return jsonify({'playing': False})
-        track_info = now_playing.to_dict()
+        track_info = now_playing.to_dict(skip_api_refresh=True)
         logger.debug(f"Now playing: {track_info}")
         return jsonify(track_info)
     except Exception as e:

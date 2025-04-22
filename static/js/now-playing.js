@@ -38,7 +38,7 @@ function startProgress() {
     progressBar.classList.add('is-progressing');
 }
 
-function updateNowPlaying(data) {
+export function updateNowPlaying(data) {
     const nowPlayingPanel = document.querySelector('.Panels-panel--nowPlaying');
     const stationsPanel = document.querySelector('.Panels-panel--stations');
     const artwork = nowPlayingPanel.querySelector('.NowPlaying-artwork');
@@ -72,7 +72,7 @@ function updateNowPlaying(data) {
         track.textContent = '🎵 ' + (data.title || 'Unknown Track');
 
         if (data.artist) {
-            artist.textContent = '👤 ' + (data.artist || '');
+            artist.textContent = '👤 ' + data.artist;
             artist.classList.add('is-visible');
         } else {
             artist.textContent = '';
@@ -80,27 +80,27 @@ function updateNowPlaying(data) {
         }
 
         if (data.album) {
-            album.textContent = '💿 ' + (data.album || '');
+            album.textContent = '💿 ' + data.album;
             album.classList.add('is-visible');
         } else {
             album.textContent = '';
             album.classList.remove('is-visible');
         }
 
-        if (data.release_date) {
-            releaseDate.textContent = '🗓️ ' + (data.release_date || '');
-            releaseDate.classList.add('is-visible');
-        } else {
-            releaseDate.textContent = '';
-            releaseDate.classList.remove('is-visible');
-        }
-
         if (data.playlist) {
-            playlist.textContent = '📑 ' + (data.playlist || '');
+            playlist.textContent = '📑 ' + data.playlist;
             playlist.classList.add('is-visible');
         } else {
             playlist.textContent = '';
             playlist.classList.remove('is-visible');
+        }
+
+        if (data.release_date) {
+            releaseDate.textContent = '🗓️ ' + data.release_date;
+            releaseDate.classList.add('is-visible');
+        } else {
+            releaseDate.textContent = '';
+            releaseDate.classList.remove('is-visible');
         }
 
         source.textContent = data.source || '';
@@ -120,7 +120,21 @@ function updateNowPlaying(data) {
     updateNavigationButtons();
 }
 
-function initializeNowPlaying() {
+async function checkNowPlaying() {
+    try {
+        startProgress();
+        const response = await fetch('/now-playing');
+        const data = await response.json();
+        updateNowPlaying(data);
+    } catch (error) {
+        console.error('Error polling now playing:', error);
+    }
+
+    // Schedule next poll
+    setTimeout(checkNowPlaying, 10000);
+}
+
+export function initializeNowPlaying() {
     // Add click handler for back button
     const backButton = document.querySelector('.NavButton--back');
     backButton.addEventListener('click', () => {
@@ -134,21 +148,5 @@ function initializeNowPlaying() {
     });
 
     // Start polling for now playing info
-    async function checkNowPlaying() {
-        try {
-            startProgress();
-            const response = await fetch('/now-playing');
-            const data = await response.json();
-            updateNowPlaying(data);
-        } catch (error) {
-            console.error('Error polling now playing:', error);
-        }
-
-        setTimeout(checkNowPlaying, 10000);
-    }
-
-    // Poll every x seconds
     checkNowPlaying();
 }
-
-export { initializeNowPlaying };

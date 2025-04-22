@@ -6,36 +6,39 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    max-width: 100%;
+    gap: 20px;
 }
 
 @media (orientation: landscape) {
     .NowPlaying {
         flex-direction: row;
+        align-items: center;
+        gap: 40px;
     }
 }
 
 .NowPlaying-artwork {
-    max-width: 100%;
-    max-height: 40vh;
-    width: auto;
-    height: auto;
-    border-radius: 5px;
-    margin-bottom: 20px;
+    width: min(60vh, 90vw);
+    height: min(60vh, 90vw);
     object-fit: contain;
+    border-radius: 8px;
+    flex-shrink: 0;
 }
 
 @media (orientation: landscape) {
     .NowPlaying-artwork {
-        max-width: 50vh;
-        max-height: 100%;
-        margin-bottom: 0;
-        margin-right: 20px;
+        width: min(60vh, 40vw);
+        height: min(60vh, 40vw);
     }
 }
 
 .NowPlaying-info {
-    text-align: center;
-    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: min(600px, 90vw);
 }
 
 .NowPlaying-track,
@@ -43,20 +46,26 @@
 .NowPlaying-album,
 .NowPlaying-playlist,
 .NowPlaying-releaseDate {
-    margin: 0 0 8px;
+    margin: 0;
+    padding: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
+    min-height: 1.2em;
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    word-break: break-word;
 }
 
 .NowPlaying-track {
-    font-size: 32px;
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 600;
     color: #333;
 }
 
 .NowPlaying-artist {
-    font-size: 26px;
+    font-size: clamp(20px, 4vw, 26px);
     color: #666;
 }
 
@@ -64,7 +73,7 @@
 .NowPlaying-playlist,
 .NowPlaying-releaseDate {
     display: none;
-    font-size: 20px;
+    font-size: clamp(16px, 3vw, 20px);
     color: #888;
     font-style: italic;
 }
@@ -81,7 +90,8 @@
     border-radius: 16px;
     background-color: #ddd;
     color: #666;
-    font-size: 20px;
+    font-size: clamp(16px, 3vw, 20px);
     text-transform: uppercase;
     margin-top: 8px;
+    align-self: center;
 }

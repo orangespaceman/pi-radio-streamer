@@ -1,4 +1,5 @@
 import { showStatus } from './status.js';
+import { updateNowPlaying } from './now-playing.js';
 
 const stopButton = document.querySelector('.ControlButton--stop');
 const playButton = document.querySelector('.ControlButton--play');
@@ -15,26 +16,6 @@ function clearActiveStations() {
     document.querySelectorAll('.StationButton').forEach((button) => {
         button.classList.remove('is-active');
     });
-}
-
-async function checkCurrentStation() {
-    try {
-        const response = await fetch('/now-playing');
-        const data = await response.json();
-
-        if (data.playing && data.station_id) {
-            const button = document.querySelector(
-                `[data-station-id="${data.station_id}"]`
-            );
-            if (button) {
-                clearActiveStations();
-                button.classList.add('is-active');
-            }
-        }
-        updateControls(data);
-    } catch (error) {
-        console.error('Error checking current station:', error);
-    }
 }
 
 export function updateControls(data) {
@@ -74,6 +55,8 @@ async function handleStationClick(event) {
         if (data.success) {
             showStatus(data.message, 'success');
             button.classList.add('is-active');
+            updateNowPlaying(data);
+            updateControls(data);
         } else {
             showStatus(data.error || 'Unknown error', 'error');
         }
@@ -96,6 +79,8 @@ async function handleStopClick(event) {
         if (data.success) {
             showStatus(data.message, 'success');
             clearActiveStations();
+            updateNowPlaying(data);
+            updateControls(data);
         } else {
             showStatus(data.error || 'Unknown error', 'error');
         }
@@ -115,7 +100,10 @@ async function handleControlClick(event, control) {
         const response = await fetch(`/${control}`);
         const data = await response.json();
 
-        if (!data.success) {
+        if (data.success) {
+            updateNowPlaying(data);
+            updateControls(data);
+        } else {
             showStatus(data.error || 'Unknown error', 'error');
         }
     } catch (error) {
@@ -148,7 +136,4 @@ export function initializePlaybackControls() {
 
     const refreshButton = document.querySelector('.TopBar-ipAddress');
     refreshButton.addEventListener('click', handleRefreshClick);
-
-    // Check current station on page load
-    checkCurrentStation();
 }

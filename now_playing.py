@@ -75,56 +75,76 @@ class NowPlaying:
             and time.time() - self.last_update < 10):
             return self.current_track
 
+        # If we have a current track and not forcing refresh, return it
+        if (not force_refresh
+            and self.current_track
+            and self.cast
+            and self.cast.media_controller.status
+            and self.current_track.get('content_id') == str(self.cast.media_controller.status.content_id or '').lower()):
+            return self.current_track
+
         if not self.cast:
             logging.debug("No cast device available")
             return None
 
+        # Check what's playing on Chromecast
+        if not self.cast.media_controller.status:
+            self.last_update = time.time()
+            return None
+
+        logging.debug(f"Chromecast app_id: {self.cast.app_id}")
+        logging.debug(f"Media controller status: {self.cast.media_controller.status}")
+
+        content_id = str(self.cast.media_controller.status.content_id or '').lower()
+        title = str(self.cast.media_controller.status.title or '').lower()
+        logging.debug(f"Content ID: {content_id}")
+        logging.debug(f"Title: {title}")
+
         self.last_update = time.time()
 
-        # Check what's playing on Chromecast
-        if self.cast.media_controller.status:
-            logging.debug(f"Chromecast app_id: {self.cast.app_id}")
-            logging.debug(f"Media controller status: {self.cast.media_controller.status}")
+        # First check if Spotify is playing
+        if 'spotify:track:' in content_id:
+            logging.debug("Spotify track detected")
+            track = self.services['SpotifyService'].get_track(self.current_track)
+            if track:
+                track['station_id'] = 'spotify'
+                track['content_id'] = content_id
+                return track
 
-            content_id = str(self.cast.media_controller.status.content_id or '').lower()
-            title = str(self.cast.media_controller.status.title or '').lower()
-            logging.debug(f"Content ID: {content_id}")
-            logging.debug(f"Title: {title}")
+        # Find matching station based on content_matchers
+        for station_id, station in STATIONS.items():
+            for matcher in station.get('content_matchers', []):
+                if re.search(matcher, content_id) or re.search(matcher, title):
+                    # If station has a now playing service, use it
+                    if 'now_playing_service' in station:
+                        track = self.services[station['now_playing_service']].get_track()
+                        if track:
+                            track['station_id'] = station_id
+                            track['content_id'] = content_id
+                            return track
 
-            # First check if Spotify is playing
-            if 'spotify:track:' in content_id:
-                logging.debug("Spotify track detected")
-                track = self.services['SpotifyService'].get_track(self.current_track)
-                if track:
-                    track['station_id'] = 'spotify'
+                    # Otherwise return basic station info
+                    track = {
+                        'title': station['name'],
+                        'artist': None,
+                        'image_url': station['image'],
+                        'source': station['name'],
+                        'station_id': station_id,
+                        'content_id': content_id
+                    }
                     return track
-
-            # Find matching station based on content_matchers
-            for station_id, station in STATIONS.items():
-                for matcher in station.get('content_matchers', []):
-                    if re.search(matcher, content_id) or re.search(matcher, title):
-                        # If station has a now playing service, use it
-                        if 'now_playing_service' in station:
-                            track = self.services[station['now_playing_service']].get_track()
-                            if track:
-                                track['station_id'] = station_id
-                                return track
-
-                        # Otherwise return basic station info
-                        track = {
-                            'title': station['name'],
-                            'artist': None,
-                            'image_url': station['image'],
-                            'source': station['name'],
-                            'station_id': station_id
-                        }
-                        return track
 
         return None
 
-    def to_dict(self):
+    def to_dict(self, skip_api_refresh=False):
         """Convert current track info to dictionary"""
-        track = self.get_current_track()
+        # Get current player state first
+        is_playing = False
+        if self.cast and self.cast.media_controller and self.cast.media_controller.status:
+            is_playing = self.cast.media_controller.status.player_is_playing
+
+        # Get track info - force refresh only if playing and not skipping API refresh
+        track = self.get_current_track(force_refresh=(is_playing and not skip_api_refresh))
         self.current_track = track
 
         if not track:
@@ -134,7 +154,7 @@ class NowPlaying:
             }
 
         return {
-            'playing': self.cast.media_controller.status.player_is_playing,
+            'playing': is_playing,
             'title': track.get('title'),
             'artist': track.get('artist'),
             'artwork': self.get_artwork(track),
