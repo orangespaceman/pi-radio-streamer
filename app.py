@@ -61,7 +61,7 @@ def index_route():
     return render_template('index.html', stations=STATIONS, ip_address=ip_address, port=FLASK_PORT)
 
 @app.route('/play/<station>')
-def play_route(station):
+def play_station_route(station):
     if station not in STATIONS:
         error_msg = f'Station {station} not found'
         logger.error(error_msg)
@@ -155,6 +155,45 @@ def stop_route():
         return jsonify({'success': True, 'message': success_msg})
     except Exception as e:
         error_msg = f'Error stopping playback: {str(e)}'
+        logger.error(error_msg, exc_info=True if DEBUG else False)
+        return jsonify({'error': error_msg}), 500
+
+@app.route('/next')
+def next_route():
+    mc = cast.media_controller
+    return update_playback(mc.queue_next)
+
+@app.route('/prev')
+def prev_route():
+    mc = cast.media_controller
+    return update_playback(mc.queue_prev)
+
+@app.route('/pause')
+def pause_route():
+    mc = cast.media_controller
+    return update_playback(mc.pause)
+
+@app.route('/play')
+def play_route():
+    mc = cast.media_controller
+    return update_playback(mc.play)
+
+def update_playback(action):
+    try:
+        cast = get_chromecast()
+        if not cast:
+            error_msg = f'Chromecast {CHROMECAST_NAME} not found'
+            logger.error(error_msg)
+            return jsonify({'error': error_msg}), 404
+
+        logger.debug("Update playback")
+        action()
+        cast.wait()
+        success_msg = 'Playback updated'
+        logger.info(success_msg)
+        return jsonify({'success': True, 'message': success_msg})
+    except Exception as e:
+        error_msg = f'Error updating playback: {str(e)}'
         logger.error(error_msg, exc_info=True if DEBUG else False)
         return jsonify({'error': error_msg}), 500
 

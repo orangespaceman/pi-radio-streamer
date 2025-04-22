@@ -1,7 +1,9 @@
+import { updateControls } from './playback.js';
+
 let currentTrack = null;
 
 function showPanel(panelClass) {
-    document.querySelectorAll('.Panel').forEach((panel) => {
+    document.querySelectorAll('.Panels-panel').forEach((panel) => {
         panel.classList.toggle(
             'is-visible',
             panel.classList.contains(panelClass)
@@ -11,7 +13,7 @@ function showPanel(panelClass) {
 }
 
 function updateNavigationButtons() {
-    const nowPlayingPanel = document.querySelector('.Panel--nowPlaying');
+    const nowPlayingPanel = document.querySelector('.Panels-panel--nowPlaying');
     const backButton = document.querySelector('.NavButton--back');
     const forwardButton = document.querySelector('.NavButton--forward');
     const isNowPlayingVisible =
@@ -29,7 +31,7 @@ function updateNavigationButtons() {
 }
 
 function startProgress() {
-    const progressBar = document.querySelector('.UpdateProgress-bar');
+    const progressBar = document.querySelector('.TopBar-updateProgressBar');
     progressBar.classList.remove('is-progressing');
     // Force a reflow to restart the animation
     void progressBar.offsetWidth;
@@ -37,17 +39,19 @@ function startProgress() {
 }
 
 function updateNowPlaying(data) {
-    const nowPlayingPanel = document.querySelector('.Panel--nowPlaying');
-    const stationsPanel = document.querySelector('.Panel--stations');
+    const nowPlayingPanel = document.querySelector('.Panels-panel--nowPlaying');
+    const stationsPanel = document.querySelector('.Panels-panel--stations');
     const artwork = nowPlayingPanel.querySelector('.NowPlaying-artwork');
     const track = nowPlayingPanel.querySelector('.NowPlaying-track');
     const artist = nowPlayingPanel.querySelector('.NowPlaying-artist');
     const album = nowPlayingPanel.querySelector('.NowPlaying-album');
     const playlist = nowPlayingPanel.querySelector('.NowPlaying-playlist');
     const releaseDate = nowPlayingPanel.querySelector(
-        '.NowPlaying-release-date'
+        '.NowPlaying-releaseDate'
     );
     const source = nowPlayingPanel.querySelector('.NowPlaying-source');
+
+    updateControls(data);
 
     // If we're already showing this track, don't update
     if (
@@ -66,7 +70,14 @@ function updateNowPlaying(data) {
     if (data.playing) {
         artwork.src = data.artwork || '';
         track.textContent = '🎵 ' + (data.title || 'Unknown Track');
-        artist.textContent = '👤 ' + (data.artist || '');
+
+        if (data.artist) {
+            artist.textContent = '👤 ' + (data.artist || '');
+            artist.classList.add('is-visible');
+        } else {
+            artist.textContent = '';
+            artist.classList.remove('is-visible');
+        }
 
         if (data.album) {
             album.textContent = '💿 ' + (data.album || '');
@@ -75,6 +86,7 @@ function updateNowPlaying(data) {
             album.textContent = '';
             album.classList.remove('is-visible');
         }
+
         if (data.release_date) {
             releaseDate.textContent = '🗓️ ' + (data.release_date || '');
             releaseDate.classList.add('is-visible');
@@ -82,6 +94,7 @@ function updateNowPlaying(data) {
             releaseDate.textContent = '';
             releaseDate.classList.remove('is-visible');
         }
+
         if (data.playlist) {
             playlist.textContent = '📑 ' + (data.playlist || '');
             playlist.classList.add('is-visible');
@@ -94,12 +107,12 @@ function updateNowPlaying(data) {
 
         // Show now playing panel if not already visible
         if (!nowPlayingPanel.classList.contains('is-visible')) {
-            showPanel('Panel--nowPlaying');
+            showPanel('Panels-panel--nowPlaying');
         }
     } else {
         // Show stations panel if not already visible
         if (!stationsPanel.classList.contains('is-visible')) {
-            showPanel('Panel--stations');
+            showPanel('Panels-panel--stations');
         }
     }
 
@@ -111,13 +124,13 @@ function initializeNowPlaying() {
     // Add click handler for back button
     const backButton = document.querySelector('.NavButton--back');
     backButton.addEventListener('click', () => {
-        showPanel('Panel--stations');
+        showPanel('Panels-panel--stations');
     });
 
     // Add click handler for forward button
     const forwardButton = document.querySelector('.NavButton--forward');
     forwardButton.addEventListener('click', () => {
-        showPanel('Panel--nowPlaying');
+        showPanel('Panels-panel--nowPlaying');
     });
 
     // Start polling for now playing info

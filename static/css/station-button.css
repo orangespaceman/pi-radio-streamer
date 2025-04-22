@@ -1,0 +1,67 @@
+/* Station Button and loading spinner */
+.StationButton {
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.StationButton.is-active {
+    background-color: #2196f3;
+}
+
+.StationButton.is-active:hover {
+    background-color: #1976d2;
+}
+
+.StationButton:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.StationButton:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.StationButton-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.StationButton-spinner {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+.StationButton.is-loading .StationButton-spinner {
+    display: block;
+}

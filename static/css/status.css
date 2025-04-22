@@ -1,0 +1,26 @@
+/* Status messages */
+.Status {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    padding: 20px 40px;
+    border-radius: 8px;
+    display: none;
+    z-index: 100;
+}
+
+.Status.is-visible {
+    display: block;
+}
+
+.Status--success {
+    background-color: #dff0d8;
+    color: #3c763d;
+}
+
+.Status--error {
+    background-color: #f2dede;
+    color: #a94442;
+}

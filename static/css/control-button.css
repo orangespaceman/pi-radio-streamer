@@ -1,0 +1,52 @@
+/* ControlButton component */
+.ControlButton {
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    background-color: #f90;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+    min-height: 112px;
+    aspect-ratio: auto;
+}
+
+.ControlButton.is-hidden {
+    display: none;
+}
+
+.ControlButton-icon {
+    width: 64px;
+    height: 64px;
+}
+
+.ControlButton:hover {
+    background-color: #f60;
+}
+
+.ControlButton:disabled {
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.2;
+}
+
+.ControlButton--prev,
+.ControlButton--next {
+    max-width: 80px;
+    min-height: 80px;
+    border-radius: 50%;
+    margin: 10px 20px;
+}
+
+.ControlButton-spinner {
+    display: none;
+}
+
+.ControlButton.is-loading .ControlButton-spinner {
+    display: block;
+}

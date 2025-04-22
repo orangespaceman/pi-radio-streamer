@@ -1,0 +1,18 @@
+/* Bottom Bar and its layout */
+.BottomBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.BottomBar-left,
+.BottomBar-right {
+    width: 100px;
+}
+
+.BottomBar-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}

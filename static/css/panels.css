@@ -1,0 +1,24 @@
+/* Panels container and individual panel styles */
+.Panels {
+    flex: 1;
+    margin: 0;
+    position: relative;
+    display: flex;
+}
+
+.Panels-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.Panels-panel.is-visible {
+    transform: translateX(0);
+}

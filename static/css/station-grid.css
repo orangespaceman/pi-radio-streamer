@@ -1,0 +1,19 @@
+/* Station grid layout */
+.StationGrid {
+    flex: 1;
+    display: grid;
+    gap: 20px;
+    padding: 20px;
+    height: 100%;
+    /* Default portrait layout */
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+@media (orientation: landscape) {
+    .StationGrid {
+        /* Landscape layout */
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+}

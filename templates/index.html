@@ -16,10 +16,10 @@
     <body class="App">
         <!-- Fixed elements -->
         <div class="TopBar">
-            <div class="UpdateProgress">
-                <div class="UpdateProgress-bar"></div>
+            <div class="TopBar-updateProgress">
+                <div class="TopBar-updateProgressBar"></div>
             </div>
-            <button class="IP-address">
+            <button class="TopBar-ipAddress">
                 http://{{ ip_address }}:{{ port }}
             </button>
         </div>
@@ -27,27 +27,27 @@
         <!-- Sliding panels container -->
         <div class="Panels">
             <!-- Station grid panel -->
-            <div class="Panel Panel--stations is-visible">
+            <div class="Panels-panel Panels-panel--stations is-visible">
                 <div class="StationGrid">
                     {% for id, station in stations.items() %}
                     <button
-                        class="Button Button--station"
+                        class="StationButton"
                         data-station-id="{{ id }}"
                         title="{{ station.name }}"
                     >
                         <img
-                            class="Button-icon"
+                            class="StationButton-icon"
                             src="{{ station.image }}"
                             alt="{{ station.name }}"
                         />
-                        <div class="Button-spinner"></div>
+                        <div class="StationButton-spinner"></div>
                     </button>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Now playing panel -->
-            <div class="Panel Panel--nowPlaying">
+            <div class="Panels-panel Panels-panel--nowPlaying">
                 <div class="NowPlaying">
                     <img class="NowPlaying-artwork" src="" alt="Album Art" />
                     <div class="NowPlaying-info">
@@ -55,8 +55,8 @@
                         <p class="NowPlaying-artist">👤</p>
                         <p class="NowPlaying-album">💿</p>
                         <p class="NowPlaying-playlist">📑</p>
-                        <p class="NowPlaying-release-date">🗓️</p>
-                        <span class="NowPlaying-source badge"></span>
+                        <p class="NowPlaying-releaseDate">🗓️</p>
+                        <span class="NowPlaying-source"></span>
                     </div>
                 </div>
             </div>
@@ -69,7 +69,12 @@
                     class="NavButton NavButton--back"
                     title="Back to stations"
                 >
-                    <svg width="24" height="24" viewBox="0 0 24 24">
+                    <svg
+                        class="NavButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
                         <path
                             d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
                         />
@@ -78,11 +83,66 @@
             </div>
 
             <div class="BottomBar-center">
-                <button class="Button Button--stop" title="Stop">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
+                <button class="ControlButton ControlButton--prev" title="Prev">
+                    <svg
+                        class="ControlButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M8 12L16 18V6L8 12Z" />
+                        <rect x="6" y="6" width="2" height="12" />
+                    </svg>
+                    <div class="ControlButton-spinner"></div>
+                </button>
+                <button class="ControlButton ControlButton--play" title="Play">
+                    <svg
+                        class="ControlButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M8 6L18 12L8 18V6Z" />
+                    </svg>
+                    <div class="ControlButton-spinner"></div>
+                </button>
+                <button
+                    class="ControlButton ControlButton--pause"
+                    title="Pause"
+                >
+                    <svg
+                        class="ControlButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
+                        <rect x="6" y="6" width="3" height="12" />
+                        <rect x="15" y="6" width="3" height="12" />
+                    </svg>
+                    <div class="ControlButton-spinner"></div>
+                </button>
+                <button class="ControlButton ControlButton--stop" title="Stop">
+                    <svg
+                        class="ControlButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
                         <rect x="6" y="6" width="12" height="12" />
                     </svg>
-                    <div class="Button-spinner"></div>
+                    <div class="ControlButton-spinner"></div>
+                </button>
+                <button class="ControlButton ControlButton--next" title="Next">
+                    <svg
+                        class="ControlButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M14 12L6 6V18L14 12Z" />
+                        <rect x="14" y="6" width="2" height="12" />
+                    </svg>
+                    <div class="ControlButton-spinner"></div>
                 </button>
             </div>
 
@@ -91,7 +151,12 @@
                     class="NavButton NavButton--forward"
                     title="Show now playing"
                 >
-                    <svg width="24" height="24" viewBox="0 0 24 24">
+                    <svg
+                        class="NavButton-icon"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                    >
                         <path
                             d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"
                         />

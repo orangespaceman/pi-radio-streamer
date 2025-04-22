@@ -1,0 +1,24 @@
+/* NavButton styles */
+.NavButton {
+    background: none;
+    border: none;
+    padding: 20px;
+    cursor: pointer;
+    display: none;
+    width: 100px;
+}
+
+.NavButton.is-visible {
+    display: block;
+}
+
+.NavButton-icon {
+    fill: #666;
+    transition: fill 0.2s;
+    width: 60px;
+    height: 60px;
+}
+
+.NavButton-icon:hover {
+    fill: #333;
+}

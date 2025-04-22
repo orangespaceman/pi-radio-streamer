@@ -31,6 +31,21 @@ class NowPlaying:
         self.current_track = None
         self.last_update = None
 
+    def get_artwork(self, track):
+        # Try to cache track artwork, fall back to station logo
+        artwork_url = None
+        if track.get('image_url'):
+            image_filename = f"{track['image_url'].split('/')[-1]}.jpg"
+            if self.cache_image(track['image_url'], image_filename):
+                artwork_url = f"/static/cache/{image_filename}"
+            elif track.get('station_id'):
+                # Fall back to station logo
+                artwork_url = STATIONS[track['station_id']]['image']
+        elif track.get('station_id'):
+            # No track artwork, use station logo
+            artwork_url = STATIONS[track['station_id']]['image']
+        return artwork_url
+
     def cache_image(self, url, file_name):
         """Download and cache an image file"""
         if not url:
@@ -52,10 +67,12 @@ class NowPlaying:
             pass
         return None
 
-    def get_current_track(self):
+    def get_current_track(self, force_refresh=False):
         """Get the currently playing track from any source"""
         # Only update every 10 seconds to avoid hammering APIs
-        if self.last_update and time.time() - self.last_update < 10:
+        if (not force_refresh
+            and self.last_update
+            and time.time() - self.last_update < 10):
             return self.current_track
 
         if not self.cast:
@@ -80,7 +97,6 @@ class NowPlaying:
                 track = self.services['SpotifyService'].get_track(self.current_track)
                 if track:
                     track['station_id'] = 'spotify'
-                    self.current_track = track
                     return track
 
             # Find matching station based on content_matchers
@@ -92,46 +108,36 @@ class NowPlaying:
                             track = self.services[station['now_playing_service']].get_track()
                             if track:
                                 track['station_id'] = station_id
-                                self.current_track = track
                                 return track
+
                         # Otherwise return basic station info
-                        return {
+                        track = {
                             'title': station['name'],
                             'artist': None,
                             'image_url': station['image'],
                             'source': station['name'],
                             'station_id': station_id
                         }
+                        return track
 
         return None
 
     def to_dict(self):
         """Convert current track info to dictionary"""
         track = self.get_current_track()
+        self.current_track = track
+
         if not track:
             return {
                 'playing': False,
                 'timestamp': datetime.now().isoformat()
             }
 
-        # Try to cache track artwork, fall back to station logo
-        artwork_url = None
-        if track.get('image_url'):
-            image_filename = f"{track['image_url'].split('/')[-1]}.jpg"
-            if self.cache_image(track['image_url'], image_filename):
-                artwork_url = f"/static/cache/{image_filename}"
-            elif track.get('station_id'):
-                # Fall back to station logo
-                artwork_url = STATIONS[track['station_id']]['image']
-        elif track.get('station_id'):
-            # No track artwork, use station logo
-            artwork_url = STATIONS[track['station_id']]['image']
-
         return {
-            'playing': True,
+            'playing': self.cast.media_controller.status.player_is_playing,
             'title': track.get('title'),
             'artist': track.get('artist'),
-            'artwork': artwork_url,
+            'artwork': self.get_artwork(track),
             'album': track.get('album'),
             'playlist': track.get('playlist'),
             'source': track.get('source'),

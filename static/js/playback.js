@@ -1,12 +1,18 @@
 import { showStatus } from './status.js';
 
+const stopButton = document.querySelector('.ControlButton--stop');
+const playButton = document.querySelector('.ControlButton--play');
+const pauseButton = document.querySelector('.ControlButton--pause');
+const prevButton = document.querySelector('.ControlButton--prev');
+const nextButton = document.querySelector('.ControlButton--next');
+
 function updateButtonState(button, isLoading) {
     button.classList.toggle('is-loading', isLoading);
     button.disabled = isLoading;
 }
 
 function clearActiveStations() {
-    document.querySelectorAll('.Button').forEach((button) => {
+    document.querySelectorAll('.StationButton').forEach((button) => {
         button.classList.remove('is-active');
     });
 }
@@ -25,8 +31,31 @@ async function checkCurrentStation() {
                 button.classList.add('is-active');
             }
         }
+        updateControls(data);
     } catch (error) {
         console.error('Error checking current station:', error);
+    }
+}
+
+export function updateControls(data) {
+    if (data.source === 'Spotify') {
+        stopButton.classList.add('is-hidden');
+        prevButton.classList.remove('is-hidden');
+        nextButton.classList.remove('is-hidden');
+
+        if (data.playing) {
+            playButton.classList.add('is-hidden');
+            pauseButton.classList.remove('is-hidden');
+        } else {
+            playButton.classList.remove('is-hidden');
+            pauseButton.classList.add('is-hidden');
+        }
+    } else {
+        stopButton.classList.remove('is-hidden');
+        prevButton.classList.add('is-hidden');
+        nextButton.classList.add('is-hidden');
+        playButton.classList.add('is-hidden');
+        pauseButton.classList.add('is-hidden');
     }
 }
 
@@ -78,6 +107,25 @@ async function handleStopClick(event) {
     }
 }
 
+async function handleControlClick(event, control) {
+    const button = event.currentTarget;
+
+    try {
+        updateButtonState(button, true);
+        const response = await fetch(`/${control}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            showStatus(data.error || 'Unknown error', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating playback:', error);
+        showStatus('Error updating playback', 'error');
+    } finally {
+        updateButtonState(button, false);
+    }
+}
+
 function handleRefreshClick(event) {
     event.preventDefault();
     window.location.reload();
@@ -85,15 +133,20 @@ function handleRefreshClick(event) {
 
 export function initializePlaybackControls() {
     // Add click handlers to all station buttons
-    document.querySelectorAll('.Button--station').forEach((button) => {
+    document.querySelectorAll('.StationButton').forEach((button) => {
         button.addEventListener('click', handleStationClick);
     });
 
-    // Add click handler to stop button
-    const stopButton = document.querySelector('.Button--stop');
+    // Add click handler to control buttons
     stopButton.addEventListener('click', handleStopClick);
+    playButton.addEventListener('click', (e) => handleControlClick(e, 'play'));
+    pauseButton.addEventListener('click', (e) =>
+        handleControlClick(e, 'pause')
+    );
+    prevButton.addEventListener('click', (e) => handleControlClick(e, 'prev'));
+    nextButton.addEventListener('click', (e) => handleControlClick(e, 'next'));
 
-    const refreshButton = document.querySelector('.IP-address');
+    const refreshButton = document.querySelector('.TopBar-ipAddress');
     refreshButton.addEventListener('click', handleRefreshClick);
 
     // Check current station on page load
