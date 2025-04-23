@@ -75,21 +75,8 @@ class NowPlaying:
             and time.time() - self.last_update < 10):
             return self.current_track
 
-        # If we have a current track and not forcing refresh, return it
-        if (not force_refresh
-            and self.current_track
-            and self.cast
-            and self.cast.media_controller.status
-            and self.current_track.get('content_id') == str(self.cast.media_controller.status.content_id or '').lower()):
-            return self.current_track
-
-        if not self.cast:
+        if not self.cast or not self.cast.media_controller.status:
             logging.debug("No cast device available")
-            return None
-
-        # Check what's playing on Chromecast
-        if not self.cast.media_controller.status:
-            self.last_update = time.time()
             return None
 
         logging.debug(f"Chromecast app_id: {self.cast.app_id}")
