@@ -3,16 +3,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .BottomBar-left,
 .BottomBar-right {
-    width: 100px;
+    width: 50px;
 }
 
 .BottomBar-center {
     flex: 1;
     display: flex;
     justify-content: center;
+}
+
+/* Media query for larger screens */
+@media (min-width: 768px) {
+    .BottomBar {
+        margin-bottom: 10px;
+    }
+
+    .BottomBar-left,
+    .BottomBar-right {
+        width: 100px;
+    }
 }

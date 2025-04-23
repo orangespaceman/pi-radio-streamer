@@ -2,21 +2,34 @@
 .NavButton {
     background: none;
     border: none;
-    padding: 20px;
+    padding: 10px;
     cursor: pointer;
     display: none;
-    width: 100px;
-}
-
-.NavButton.is-visible {
-    display: block;
+    width: 50px;
 }
 
 .NavButton-icon {
     fill: #666;
     transition: fill 0.2s;
-    width: 60px;
-    height: 60px;
+    width: 30px;
+    height: 30px;
+}
+
+/* Media query for larger screens */
+@media (min-width: 768px) {
+    .NavButton {
+        padding: 20px;
+        width: 100px;
+    }
+
+    .NavButton-icon {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+.NavButton.is-visible {
+    display: block;
 }
 
 .NavButton-icon:hover {

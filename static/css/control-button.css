@@ -10,18 +10,46 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 200px;
-    min-height: 112px;
+    max-width: 100px;
+    min-height: 56px;
     aspect-ratio: auto;
+}
+
+.ControlButton-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.ControlButton--prev,
+.ControlButton--next {
+    max-width: 40px;
+    min-height: 40px;
+    border-radius: 50%;
+    margin: 5px 10px;
+}
+
+/* Media query for larger screens */
+@media (min-width: 768px) {
+    .ControlButton {
+        min-height: 112px;
+        max-width: 200px;
+    }
+
+    .ControlButton-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .ControlButton--prev,
+    .ControlButton--next {
+        max-width: 80px;
+        min-height: 80px;
+        margin: 10px 20px;
+    }
 }
 
 .ControlButton.is-hidden {
     display: none;
-}
-
-.ControlButton-icon {
-    width: 64px;
-    height: 64px;
 }
 
 .ControlButton:hover {
@@ -33,14 +61,6 @@
     transform: none;
     box-shadow: none;
     opacity: 0.2;
-}
-
-.ControlButton--prev,
-.ControlButton--next {
-    max-width: 80px;
-    min-height: 80px;
-    border-radius: 50%;
-    margin: 10px 20px;
 }
 
 .ControlButton-spinner {
