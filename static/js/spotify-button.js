@@ -58,7 +58,7 @@ export const initializeSpotifyButton = () => {
                 let message = `Spotify request failed (${response.status})`;
                 if (isJson) {
                     const errorData = await response.json();
-                    if (errorData?.error) {
+                    if (errorData && errorData.error) {
                         message = errorData.error;
                     }
                 }

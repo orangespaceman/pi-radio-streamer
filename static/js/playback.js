@@ -19,7 +19,8 @@ async function fetchJsonOrError(url, options) {
     }
 
     if (!response.ok) {
-        const detail = data?.error || `${response.status} ${response.statusText}`;
+        const detail =
+            (data && data.error) || `${response.status} ${response.statusText}`;
         throw new Error(detail);
     }
 
