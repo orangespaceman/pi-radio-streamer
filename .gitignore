@@ -50,6 +50,10 @@ static/cache/
 __pycache__/
 .cache/
 .cache
+.spotify_cache
+
+# Local Spotify playlist list
+config/spotify_items.json
 
 # OS specific
 .DS_Store

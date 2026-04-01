@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💿</text></svg>"
+        />
+        <title>Spotify Items Manager</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/styles.css') }}"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/spotify-manager.css') }}"
+        />
+    </head>
+    <body class="App">
+        <div class="SpotifyManagerTopBar">
+            <div class="SpotifyManagerTopBar-inner">
+                <a href="/" class="SpotifyManagerTopBar-back">
+                    &larr; Back to Player
+                </a>
+            </div>
+        </div>
+
+        <div class="SpotifyManager">
+            <div class="SpotifyManager-form">
+                <h3>Add New Playlist</h3>
+                <form id="add-item-form">
+                    <div class="FormRow">
+                        <label for="name">Playlist name:</label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            placeholder="My Favourites"
+                            required
+                        />
+                    </div>
+                    <div class="FormRow">
+                        <label for="uri">Spotify URI or URL:</label>
+                        <input
+                            type="text"
+                            id="uri"
+                            name="uri"
+                            placeholder="spotify:playlist:123..."
+                            required
+                        />
+                    </div>
+                    <div class="FormActions">
+                        <button type="submit" class="Button Button--primary">
+                            Add Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="SpotifyManager-list">
+                <h3>Saved Playlists</h3>
+                <div
+                    id="items-table-container"
+                    class="SpotifyManager-itemsTableContainer"
+                >
+                    <table id="items-table" class="SpotifyManager-itemsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-list">
+                            <!-- Items will be loaded here via JavaScript -->
+                        </tbody>
+                    </table>
+                    <div
+                        id="no-items-message"
+                        class="SpotifyManager-noItemsMessage is-hidden"
+                    >
+                        No items added yet. Add your first Spotify item above.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="Status"></div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="Modal">
+            <div class="Modal-content">
+                <h2 class="Modal-title">Edit Item</h2>
+                <form id="edit-item-form">
+                    <input type="hidden" id="edit-item-id" />
+                    <div class="FormRow">
+                        <label for="edit-name">Name:</label>
+                        <input
+                            type="text"
+                            id="edit-name"
+                            name="edit-name"
+                            required
+                        />
+                    </div>
+                    <div class="FormRow">
+                        <label for="edit-uri">Spotify URI or URL:</label>
+                        <input
+                            type="text"
+                            id="edit-uri"
+                            name="edit-uri"
+                            required
+                        />
+                    </div>
+                    <div class="FormActions">
+                        <button
+                            type="button"
+                            class="Button Button--secondary SpotifyManager-cancelButton"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="Button Button--primary">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+                <button class="Modal-close">&times;</button>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="Modal">
+            <div class="Modal-content">
+                <h2 class="Modal-title">Confirm Delete</h2>
+                <p>Are you sure you want to delete this item?</p>
+                <div class="FormActions">
+                    <button
+                        class="Button Button--secondary SpotifyManager-cancelButton"
+                    >
+                        Cancel
+                    </button>
+                    <button id="confirm-delete" class="Button Button--danger">
+                        Delete
+                    </button>
+                </div>
+                <button class="Modal-close">&times;</button>
+            </div>
+        </div>
+
+        <!-- Spotify Auth Modal -->
+        <div id="spotify-auth-modal" class="Modal Modal--spotify">
+            <div class="Modal-content">
+                <h2 class="Modal-title">Spotify Authentication Required</h2>
+                <p>
+                    To manage Spotify playlists, you need to connect your
+                    Spotify account first.
+                </p>
+                <p>
+                    This will allow the app to control Spotify playback on your
+                    Chromecast.
+                </p>
+                <div class="SpotifyAuthNotice">
+                    <a href="/spotify/auth" class="SpotifyAuthButton">
+                        Connect Spotify Account
+                    </a>
+                </div>
+                <button class="Modal-close">&times;</button>
+            </div>
+        </div>
+
+        <script
+            type="module"
+            defer
+            src="{{ url_for('static', filename='js/spotify-manager.js') }}"
+        ></script>
+    </body>
+</html>

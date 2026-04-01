@@ -6,6 +6,25 @@ const playButton = document.querySelector('.ControlButton--play');
 const pauseButton = document.querySelector('.ControlButton--pause');
 const prevButton = document.querySelector('.ControlButton--prev');
 const nextButton = document.querySelector('.ControlButton--next');
+const randomPlaylistButton = document.querySelector('#random-playlist-button');
+
+async function fetchJsonOrError(url, options) {
+    const response = await fetch(url, options);
+    let data = null;
+
+    try {
+        data = await response.json();
+    } catch (_error) {
+        data = null;
+    }
+
+    if (!response.ok) {
+        const detail = data?.error || `${response.status} ${response.statusText}`;
+        throw new Error(detail);
+    }
+
+    return data || {};
+}
 
 function updateButtonState(button, isLoading) {
     button.classList.toggle('is-loading', isLoading);
@@ -31,12 +50,20 @@ export function updateControls(data) {
             playButton.classList.remove('is-hidden');
             pauseButton.classList.add('is-hidden');
         }
+
+        // Show or hide the random playlist button based on Spotify control availability
+        if (data.spotify_control_available) {
+            randomPlaylistButton.classList.remove('is-hidden');
+        } else {
+            randomPlaylistButton.classList.add('is-hidden');
+        }
     } else {
         stopButton.classList.remove('is-hidden');
         prevButton.classList.add('is-hidden');
         nextButton.classList.add('is-hidden');
         playButton.classList.add('is-hidden');
         pauseButton.classList.add('is-hidden');
+        randomPlaylistButton.classList.add('is-hidden');
     }
 }
 
@@ -49,8 +76,7 @@ async function handleStationClick(event) {
 
     try {
         updateButtonState(button, true);
-        const response = await fetch(`/play/${stationId}`);
-        const data = await response.json();
+        const data = await fetchJsonOrError(`/play/${stationId}`);
 
         if (data.success) {
             showStatus(data.message, 'success');
@@ -62,7 +88,7 @@ async function handleStationClick(event) {
         }
     } catch (error) {
         console.error('Error playing station:', error);
-        showStatus('Error playing station', 'error');
+        showStatus(error.message || 'Error playing station', 'error');
     } finally {
         updateButtonState(button, false);
     }
@@ -73,8 +99,7 @@ async function handleStopClick(event) {
 
     try {
         updateButtonState(button, true);
-        const response = await fetch('/stop');
-        const data = await response.json();
+        const data = await fetchJsonOrError('/stop');
 
         if (data.success) {
             showStatus(data.message, 'success');
@@ -86,7 +111,7 @@ async function handleStopClick(event) {
         }
     } catch (error) {
         console.error('Error stopping playback:', error);
-        showStatus('Error stopping playback', 'error');
+        showStatus(error.message || 'Error stopping playback', 'error');
     } finally {
         updateButtonState(button, false);
     }
@@ -97,8 +122,7 @@ async function handleControlClick(event, control) {
 
     try {
         updateButtonState(button, true);
-        const response = await fetch(`/${control}`);
-        const data = await response.json();
+        const data = await fetchJsonOrError(`/${control}`);
 
         if (data.success) {
             updateNowPlaying(data);
@@ -108,7 +132,7 @@ async function handleControlClick(event, control) {
         }
     } catch (error) {
         console.error('Error updating playback:', error);
-        showStatus('Error updating playback', 'error');
+        showStatus(error.message || 'Error updating playback', 'error');
     } finally {
         updateButtonState(button, false);
     }

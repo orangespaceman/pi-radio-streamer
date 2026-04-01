@@ -8,6 +8,7 @@ Stream radio stations to a Chromecast via a Raspberry Pi
 -   Also identify when Spotify is playing
 -   Simple responsive web interface
 -   Play/stop control
+-   Start random playlists when Spotify is active
 
 ## Requirements
 
@@ -56,7 +57,32 @@ The following environment variables can be configured in the `.env` file:
 -   `FLASK_PORT`: The port to run the server on (default: 3001)
 -   `DEBUG`: Enable debug mode (default: false)
 -   `INCLUDE_SPORT`: Show sport stations too? (default: false)
--   `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`: If set, use to request track release date from Spotify
+-   `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`: Required for Spotify authentication, release dates, and random content playback
+
+### Spotify Integration
+
+For full Spotify integration, including the ability to start random Spotify content, you need to:
+
+1. Create a Spotify Developer account at https://developer.spotify.com/
+2. Create a new application in the Spotify Developer Dashboard
+3. Add the redirect URI to your Spotify application settings. It must exactly match what the app uses:
+   - Default: `http://<your-local-ip>:<FLASK_PORT>/spotify/auth/callback`
+   - Or set `SPOTIFY_REDIRECT_URI` in `.env` and add that exact value in Spotify Dashboard -> Your App -> Edit Settings -> Redirect URIs
+4. Copy your Client ID and Client Secret to the `.env` file
+5. Configure Spotify content items in the web manager at `/spotify/manager`
+
+#### Configuring Spotify Content
+
+Spotify content is stored in `config/spotify_items.json` and can be managed via the Spotify manager page.
+
+#### First-Time Authentication
+
+1. Open the web UI in a browser
+2. Use **Connect Spotify Account** (for example from the auth prompt when starting Spotify playback)
+3. Sign in to Spotify and approve access; you are redirected back to the app
+4. Tokens are cached in `.spotify_cache`
+
+When Spotify is playing on your Chromecast, a Spotify button will appear in the station grid if authentication is successful and your Chromecast is available as a Spotify Connect device.
 
 ## Usage
 

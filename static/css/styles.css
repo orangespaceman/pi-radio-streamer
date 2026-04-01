@@ -7,5 +7,9 @@
 @import 'nav-button.css';
 @import 'station-button.css';
 @import 'control-button.css';
+@import 'spotify-button.css';
+@import 'spotify-manager-link.css';
+@import 'spotify-auth-notice.css';
 @import 'status.css';
 @import 'now-playing.css';
+@import 'modal.css';

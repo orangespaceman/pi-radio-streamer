@@ -4,6 +4,7 @@
     margin: 0;
     position: relative;
     display: flex;
+    overflow: hidden; /* Contain the panels */
 }
 
 .Panels-panel {
@@ -12,7 +13,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow-y: auto; /* Enable vertical scrolling */
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     display: flex;

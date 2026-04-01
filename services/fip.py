@@ -1,25 +1,48 @@
 import requests
 import logging
+import time
 from .base import NowPlayingService
 
 class FIPService(NowPlayingService):
-    API_URL = "https://www.radiofrance.fr/fip/api/live"
+    API_URL = "https://api.radiofrance.fr/livemeta/pull/7"
+    REQUEST_TIMEOUT_SECONDS = 5
 
     def get_track(self):
         try:
-            response = requests.get(self.API_URL)
+            response = requests.get(self.API_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
             if response.status_code == 200:
                 data = response.json()
-                if 'now' in data:
-                    track = data['now']
-                    return {
-                        'title': track.get('firstLine', {}).get('title', 'Unknown'),
-                        'artist': track.get('secondLine', {}).get('title', 'Unknown'),
-                        'image_url': track.get('visuals', {}).get('card', {}).get('src'),
-                        'album': track.get('song', {}).get('release', {}).get('title'),
-                        'release_date': track.get('song', {}).get('year'),
-                        'source': 'FIP Radio'
-                    }
+                if isinstance(data, dict):
+                    now_ts = int(time.time())
+                    steps = data.get('steps', {})
+                    if isinstance(steps, dict) and steps:
+                        current_track = None
+                        current_start = -1
+
+                        for step in steps.values():
+                            if not isinstance(step, dict):
+                                continue
+                            if step.get('embedType') != 'song':
+                                continue
+
+                            start = step.get('start')
+                            end = step.get('end')
+                            if not isinstance(start, int) or not isinstance(end, int):
+                                continue
+
+                            if start <= now_ts < end and start > current_start:
+                                current_track = step
+                                current_start = start
+
+                        if current_track:
+                            return {
+                                'title': current_track.get('title', 'Unknown'),
+                                'artist': current_track.get('authors', 'Unknown'),
+                                'image_url': current_track.get('visual'),
+                                'album': current_track.get('titreAlbum'),
+                                'release_date': current_track.get('anneeEditionMusique'),
+                                'source': 'FIP Radio'
+                            }
             # If we can't access the API but we know FIP is playing, return basic info
             if self.cast and self.cast.media_controller.status:
                 return {

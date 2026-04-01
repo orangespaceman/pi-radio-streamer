@@ -1,0 +1,201 @@
+/* Spotify Manager Styles */
+
+/* Layout */
+html,
+body,
+.App {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+}
+
+.SpotifyManager {
+    padding: 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+}
+
+/* Top Bar */
+.SpotifyManagerTopBar {
+    max-width: 1000px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+}
+
+.SpotifyManagerTopBar-inner {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.SpotifyManagerTopBar-back {
+    color: #1f2937;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background-color: #e5e7eb;
+    transition: background-color 0.2s;
+}
+
+.SpotifyManagerTopBar-back:hover {
+    background-color: #d1d5db;
+}
+
+/* Cards */
+.SpotifyManager-intro {
+    margin-bottom: 24px;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.SpotifyManager-form,
+.SpotifyManager-list {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Form */
+.SpotifyManager h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 18px;
+    color: #333;
+}
+
+.FormRow {
+    margin-bottom: 16px;
+}
+
+.FormRow label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.FormRow input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.FormHint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.FormActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Buttons */
+.Button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.Button--primary {
+    background-color: #1db954;
+    color: white;
+}
+
+.Button--secondary {
+    background-color: #eee;
+    color: #333;
+}
+
+.Button--danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Table */
+.SpotifyManager-itemsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.SpotifyManager-itemsTableContainer {
+    width: 100%;
+}
+
+.SpotifyManager-itemsTable th,
+.SpotifyManager-itemsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.SpotifyManager-itemsTable th {
+    background-color: #f9f9f9;
+    font-weight: bold;
+}
+
+/* Table Actions */
+.SpotifyManager-itemUri {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.SpotifyManager-actionButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.SpotifyManager-actionButton {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.SpotifyManager-actionButton--edit {
+    background-color: #3498db;
+    color: white;
+}
+
+.SpotifyManager-actionButton--delete {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Utilities */
+.is-hidden {
+    display: none !important;
+}
+
+.SpotifyManager-noItemsMessage {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .SpotifyManager-itemsTableContainer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}

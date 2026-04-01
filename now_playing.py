@@ -8,10 +8,13 @@ from datetime import datetime
 from config.stations import STATIONS
 from services.bbc import BBC6Service
 from services.fip import FIPService
+from services.radioparadise import RadioParadiseService
 from services.spotify import SpotifyService
 
+ARTWORK_REQUEST_TIMEOUT_SECONDS = 5
+
 class NowPlaying:
-    def __init__(self, cast=None):
+    def __init__(self, cast=None, spotify_redirect_uri=None):
         self.cast = cast
         self.last_update = None
         self.current_track = None
@@ -24,7 +27,8 @@ class NowPlaying:
         self.services = {
             'BBC6Service': BBC6Service(cast),
             'FIPService': FIPService(cast),
-            'SpotifyService': SpotifyService(cast)
+            'RadioParadiseService': RadioParadiseService(cast),
+            'SpotifyService': SpotifyService(cast, redirect_uri=spotify_redirect_uri)
         }
 
     def clear_current_track(self):
@@ -58,11 +62,15 @@ class NowPlaying:
             return file_name
 
         try:
-            response = requests.get(url, stream=True)
-            if response.status_code == 200:
-                with open(file_path, 'wb') as out_file:
-                    shutil.copyfileobj(response.raw, out_file)
-                return file_name
+            with requests.get(
+                url,
+                stream=True,
+                timeout=ARTWORK_REQUEST_TIMEOUT_SECONDS,
+            ) as response:
+                if response.status_code == 200:
+                    with open(file_path, 'wb') as out_file:
+                        shutil.copyfileobj(response.raw, out_file)
+                    return file_name
         except Exception:
             pass
         return None

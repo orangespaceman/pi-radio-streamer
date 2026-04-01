@@ -1,0 +1,25 @@
+/* SpotifyAuthNotice component */
+.SpotifyAuthNotice {
+    margin-top: 20px;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.SpotifyAuthButton {
+    display: inline-block;
+    background-color: #1db954;
+    color: white;
+    font-weight: bold;
+    padding: 10px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+.SpotifyAuthButton:hover {
+    background-color: #1ed760;
+}

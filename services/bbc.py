@@ -4,10 +4,11 @@ from .base import NowPlayingService
 
 class BBC6Service(NowPlayingService):
     API_URL = "https://rms.api.bbc.co.uk/v2/services/bbc_6music/segments/latest"
+    REQUEST_TIMEOUT_SECONDS = 5
 
     def get_track(self):
         try:
-            response = requests.get(self.API_URL)
+            response = requests.get(self.API_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
             if response.status_code == 200:
                 data = response.json()
                 if 'data' in data and len(data['data']) > 0:

@@ -1,19 +1,23 @@
-/* Station grid layout */
+/* Station grid: always 2 columns below 400px; at 400px+ use 4 only when sport (StationGrid--sport) */
 .StationGrid {
     flex: 1;
     display: grid;
-    gap: 20px;
-    padding: 20px;
+    gap: 6px;
+    padding: 6px;
     height: 100%;
-    /* Default portrait layout */
+    grid-auto-rows: 1fr;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
 }
 
-@media (orientation: landscape) {
+@media (min-width: 400px) {
+    .StationGrid--sport {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 800px) {
     .StationGrid {
-        /* Landscape layout */
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(2, 1fr);
+        gap: 20px;
+        padding: 20px;
     }
 }
