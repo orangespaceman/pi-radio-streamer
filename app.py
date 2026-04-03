@@ -25,6 +25,10 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+# Werkzeug logs every HTTP request at INFO; with systemd that floods syslog/daemon.log.
+logging.getLogger('werkzeug').setLevel(
+    logging.INFO if DEBUG else logging.ERROR
+)
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
