@@ -139,8 +139,29 @@ async function handleControlClick(event, control) {
     }
 }
 
-function handleRefreshClick(event) {
+async function handleRefreshClick(event) {
     event.preventDefault();
+    const button = event.currentTarget;
+    const unit = button.dataset.systemdService;
+
+    if (unit) {
+        try {
+            const response = await fetch('/restart-service', { method: 'POST' });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                const detail =
+                    (data && data.error) ||
+                    `${response.status} ${response.statusText}`;
+                showStatus(detail, 'error');
+                return;
+            }
+        } catch (error) {
+            console.error('Restart request failed:', error);
+            showStatus(error.message || 'Restart request failed', 'error');
+            return;
+        }
+    }
+
     window.location.reload();
 }
 

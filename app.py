@@ -3,6 +3,7 @@ import pychromecast
 import os
 import logging
 import socket
+import subprocess
 import threading
 from dotenv import load_dotenv
 from now_playing import NowPlaying
@@ -18,6 +19,7 @@ FLASK_PORT = int(os.getenv('FLASK_PORT', 3001))
 DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
 SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(24))
 SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI')
+SYSTEMD_SERVICE_NAME = (os.getenv('SYSTEMD_SERVICE_NAME') or '').strip()
 
 # Configure logging
 logging.basicConfig(
@@ -111,7 +113,8 @@ def index_route():
                           ip_address=ip_address,
                           port=FLASK_PORT,
                           status=status,
-                          message=message)
+                          message=message,
+                          systemd_restart_unit=SYSTEMD_SERVICE_NAME)
 
 @app.route('/play/<station>')
 def play_station_route(station):
@@ -495,6 +498,30 @@ def delete_spotify_item(item_id):
 def spotify_manager():
     """Render the Spotify items manager page"""
     return render_template('spotify_manager.html', ip_address=get_ip(), port=FLASK_PORT)
+
+@app.route('/restart-service', methods=['POST'])
+def restart_service_route():
+    if not SYSTEMD_SERVICE_NAME:
+        return jsonify({'error': 'Service restart not configured'}), 404
+    try:
+        subprocess.run(
+            ['sudo', '-n', 'systemctl', 'restart', SYSTEMD_SERVICE_NAME],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.CalledProcessError as e:
+        err = (e.stderr or e.stdout or '').strip() or str(e)
+        logger.error('systemctl restart failed: %s', err)
+        return jsonify({'error': err}), 500
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'systemctl restart timed out'}), 504
+    except OSError as e:
+        logger.error('systemctl restart failed: %s', e)
+        return jsonify({'error': str(e)}), 500
+    return jsonify({'ok': True})
+
 
 # Run the app
 if __name__ == '__main__':

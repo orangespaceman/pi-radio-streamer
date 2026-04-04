@@ -19,7 +19,13 @@
             <div class="TopBar-updateProgress">
                 <div class="TopBar-updateProgressBar"></div>
             </div>
-            <button class="TopBar-ipAddress">
+            <button
+                type="button"
+                class="TopBar-ipAddress"
+                {% if systemd_restart_unit %}
+                data-systemd-service="{{ systemd_restart_unit }}"
+                {% endif %}
+            >
                 http://{{ ip_address }}:{{ port }}
             </button>
         </div>
