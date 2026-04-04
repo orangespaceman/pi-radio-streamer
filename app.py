@@ -16,7 +16,7 @@ import time
 load_dotenv()
 CHROMECAST_NAME = os.getenv('CHROMECAST_NAME', 'Chromecast Audio')
 FLASK_PORT = int(os.getenv('FLASK_PORT', 3001))
-DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(24))
 SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI')
 SYSTEMD_SERVICE_NAME = (os.getenv('SYSTEMD_SERVICE_NAME') or '').strip()
@@ -27,10 +27,11 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-# Werkzeug logs every HTTP request at INFO; with systemd that floods syslog/daemon.log.
-logging.getLogger('werkzeug').setLevel(
-    logging.INFO if DEBUG else logging.ERROR
-)
+# Werkzeug access logs at INFO fill syslog/daemon.log in hours (UI polls /now-playing).
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+if not DEBUG:
+    logging.getLogger('pychromecast').setLevel(logging.CRITICAL)
+    logging.getLogger('zeroconf').setLevel(logging.CRITICAL)
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -505,7 +506,7 @@ def restart_service_route():
         return jsonify({'error': 'Service restart not configured'}), 404
     try:
         subprocess.run(
-            ['sudo', '-n', 'systemctl', 'restart', SYSTEMD_SERVICE_NAME],
+            ['/usr/bin/sudo', '-n', '/bin/systemctl', 'restart', SYSTEMD_SERVICE_NAME],
             check=True,
             capture_output=True,
             text=True,
