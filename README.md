@@ -15,7 +15,7 @@ Stream radio stations to a Chromecast via a Raspberry Pi
 
 -   Raspberry Pi
 -   Chromecast
--   Python 3.9 (or higher)
+-   Python 3.11 (or higher)
 -   pip
 
 ## Installation
