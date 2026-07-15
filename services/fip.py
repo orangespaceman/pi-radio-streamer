@@ -3,6 +3,8 @@ import logging
 import time
 from .base import NowPlayingService
 
+logger = logging.getLogger(__name__)
+
 class FIPService(NowPlayingService):
     API_URL = "https://api.radiofrance.fr/livemeta/pull/7"
     REQUEST_TIMEOUT_SECONDS = 5
@@ -52,5 +54,5 @@ class FIPService(NowPlayingService):
                     'source': 'FIP Radio'
                 }
         except Exception as e:
-            logging.debug(f"Error getting FIP track: {str(e)}")
+            logger.debug(f"Error getting FIP track: {str(e)}")
         return None

@@ -3,8 +3,12 @@ import json
 import logging
 import re
 
-# File path for storing Spotify items
-SPOTIFY_ITEMS_FILE = "config/spotify_items.json"
+logger = logging.getLogger(__name__)
+
+# File path for storing Spotify items, anchored to the project directory
+# so it resolves correctly regardless of the working directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SPOTIFY_ITEMS_FILE = os.path.join(BASE_DIR, "config", "spotify_items.json")
 
 def ensure_dir_exists():
     """Ensure the config directory exists"""
@@ -41,19 +45,22 @@ def get_items():
             # Return empty list if file doesn't exist
             return []
     except Exception as e:
-        logging.error(f"Error loading Spotify items: {e}")
+        logger.error(f"Error loading Spotify items: {e}")
         return []
 
 def save_items(items):
     """Save Spotify items to the JSON file"""
     ensure_dir_exists()
 
+    # Write to a temp file and rename so a power cut cannot truncate the file
+    tmp_path = SPOTIFY_ITEMS_FILE + '.tmp'
     try:
-        with open(SPOTIFY_ITEMS_FILE, 'w') as f:
+        with open(tmp_path, 'w') as f:
             json.dump(items, f, indent=2)
+        os.replace(tmp_path, SPOTIFY_ITEMS_FILE)
         return True
     except Exception as e:
-        logging.error(f"Error saving Spotify items: {e}")
+        logger.error(f"Error saving Spotify items: {e}")
         return False
 
 def add_item(name, uri):
@@ -120,7 +127,3 @@ def delete_item(item_id):
         return True, "Item deleted successfully"
     else:
         return False, "Failed to delete item"
-
-def get_item_uris():
-    """Get a list of all Spotify URIs for use in random playback"""
-    return [item.get('uri') for item in get_items() if item.get('uri')]

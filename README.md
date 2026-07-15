@@ -4,17 +4,18 @@ Stream radio stations to a Chromecast via a Raspberry Pi
 
 ## Features
 
--   Stream BBC 6 Music, BBC Radio 5 Live, BBC Radio 5 Sports Extra, talkSPORT, talkSPORT 2 and FIP Radio
+-   Stream BBC 6 Music, FIP Radio, Radio Paradise and (optionally) BBC Radio 5 Live, BBC Radio 5 Sports Extra 1-3, talkSPORT and talkSPORT 2
 -   Also identify when Spotify is playing
 -   Simple responsive web interface
 -   Play/stop control
 -   Start random playlists when Spotify is active
+-   Optional service restart button (the address in the top bar) when running as a systemd service
 
 ## Requirements
 
 -   Raspberry Pi
 -   Chromecast
--   Python 3.7 (or higher)
+-   Python 3.9 (or higher)
 -   pip
 
 ## Installation
@@ -56,8 +57,13 @@ The following environment variables can be configured in the `.env` file:
 -   `CHROMECAST_NAME`: The name of your Chromecast (default: "Chromecast Audio")
 -   `FLASK_PORT`: The port to run the server on (default: 3001)
 -   `DEBUG`: Enable debug mode (default: false)
--   `INCLUDE_SPORT`: Show sport stations too? (default: false)
+-   `INCLUDE_SPORT`: Show sport stations too? (default: true)
 -   `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`: Required for Spotify authentication, release dates, and random content playback
+-   `SYSTEMD_SERVICE_NAME`: Optional. Name of the app's systemd unit; when set, clicking the address in the top bar restarts the service. Requires a passwordless sudo rule for that unit, e.g. in `/etc/sudoers.d/pi-radio-streamer`:
+
+    ```
+    pi ALL=(root) NOPASSWD: /bin/systemctl restart pi-radio-streamer.service
+    ```
 
 ### Spotify Integration
 
@@ -162,9 +168,10 @@ sudo journalctl -u pi-radio-streamer.service
 ## Notes
 
 -   The application runs on port 3001 by default (configurable via `FLASK_PORT`)
+-   The app is served by waitress; with `DEBUG=true` it uses the Flask development server (reloader and debugger) instead
 -   The web interface can be accessed from any device on your local network
 -   Stream URLs are subject to change and may need updating if they become invalid
--   To reduce output, set `FLASK_DEBUG=False` and `DEBUG=False` in your `.env` file
+-   To reduce output, set `DEBUG=False` in your `.env` file
 -   Remember to deactivate your virtual environment when you're done:
     ```bash
     deactivate

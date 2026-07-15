@@ -11,17 +11,24 @@ from services.fip import FIPService
 from services.radioparadise import RadioParadiseService
 from services.spotify import SpotifyService
 
+logger = logging.getLogger(__name__)
+
 ARTWORK_REQUEST_TIMEOUT_SECONDS = 5
+ARTWORK_CACHE_MAX_AGE_DAYS = 90
+
+# Anchor to this file's directory so paths resolve regardless of the CWD
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class NowPlaying:
     def __init__(self, cast=None, spotify_redirect_uri=None):
         self.cast = cast
         self.last_update = None
         self.current_track = None
-        self.cache_dir = "./static/cache/"
+        self.cache_dir = os.path.join(BASE_DIR, "static", "cache")
 
         # Create cache directory if it doesn't exist
         os.makedirs(self.cache_dir, exist_ok=True)
+        self._prune_cache()
 
         # Initialize services
         self.services = {
@@ -30,6 +37,23 @@ class NowPlaying:
             'RadioParadiseService': RadioParadiseService(cast),
             'SpotifyService': SpotifyService(cast, redirect_uri=spotify_redirect_uri)
         }
+
+    def _prune_cache(self):
+        """Delete cached artwork older than ARTWORK_CACHE_MAX_AGE_DAYS to bound disk use"""
+        cutoff = time.time() - ARTWORK_CACHE_MAX_AGE_DAYS * 86400
+        try:
+            for name in os.listdir(self.cache_dir):
+                path = os.path.join(self.cache_dir, name)
+                if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+        except OSError as e:
+            logger.debug(f"Error pruning artwork cache: {e}")
+
+    def set_cast(self, cast):
+        """Point at a new cast connection, keeping service state such as Spotify auth."""
+        self.cast = cast
+        for service in self.services.values():
+            service.cast = cast
 
     def clear_current_track(self):
         self.current_track = None
@@ -84,22 +108,22 @@ class NowPlaying:
             return self.current_track
 
         if not self.cast or not self.cast.media_controller.status:
-            logging.debug("No cast device available")
+            logger.debug("No cast device available")
             return None
 
-        logging.debug(f"Chromecast app_id: {self.cast.app_id}")
-        logging.debug(f"Media controller status: {self.cast.media_controller.status}")
+        logger.debug(f"Chromecast app_id: {self.cast.app_id}")
+        logger.debug(f"Media controller status: {self.cast.media_controller.status}")
 
         content_id = str(self.cast.media_controller.status.content_id or '').lower()
         title = str(self.cast.media_controller.status.title or '').lower()
-        logging.debug(f"Content ID: {content_id}")
-        logging.debug(f"Title: {title}")
+        logger.debug(f"Content ID: {content_id}")
+        logger.debug(f"Title: {title}")
 
         self.last_update = time.time()
 
         # First check if Spotify is playing
         if 'spotify:track:' in content_id:
-            logging.debug("Spotify track detected")
+            logger.debug("Spotify track detected")
             track = self.services['SpotifyService'].get_track(self.current_track)
             if track:
                 track['station_id'] = 'spotify'

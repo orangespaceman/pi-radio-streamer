@@ -2,6 +2,8 @@ import requests
 import logging
 from .base import NowPlayingService
 
+logger = logging.getLogger(__name__)
+
 class BBC6Service(NowPlayingService):
     API_URL = "https://rms.api.bbc.co.uk/v2/services/bbc_6music/segments/latest"
     REQUEST_TIMEOUT_SECONDS = 5
@@ -22,5 +24,5 @@ class BBC6Service(NowPlayingService):
                         'source': 'BBC 6 Music'
                     }
         except Exception as e:
-            logging.debug(f"Error getting BBC6 track: {str(e)}")
+            logger.debug(f"Error getting BBC6 track: {str(e)}")
         return None

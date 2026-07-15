@@ -4,6 +4,8 @@ import requests
 
 from .base import NowPlayingService
 
+logger = logging.getLogger(__name__)
+
 
 class RadioParadiseService(NowPlayingService):
     API_URL = "https://api.radioparadise.com/api/nowplaying_list_v2022?chan=0&list_num=1"
@@ -43,5 +45,5 @@ class RadioParadiseService(NowPlayingService):
                 "source": "Radio Paradise",
             }
         except Exception as error:
-            logging.debug(f"Error getting Radio Paradise track: {str(error)}")
+            logger.debug(f"Error getting Radio Paradise track: {str(error)}")
         return None

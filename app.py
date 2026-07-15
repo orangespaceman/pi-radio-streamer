@@ -41,15 +41,59 @@ cast = None
 now_playing = None
 spotify_svc = None
 cast_init_lock = threading.Lock()
+services_init_lock = threading.Lock()
+last_failed_discovery = 0.0
+# The UI polls /now-playing every 10s; without a cooldown an unreachable
+# Chromecast would trigger a 5s discovery scan on every poll.
+DISCOVERY_RETRY_COOLDOWN_SECONDS = 30
+
+def init_services():
+    """Create NowPlaying and the Spotify service; the cast attaches when found.
+
+    Independent of the Chromecast connection so Spotify auth works even when
+    the Chromecast is unreachable.
+    """
+    global now_playing, spotify_svc
+    if now_playing is not None:
+        return
+    with services_init_lock:
+        if now_playing is not None:
+            return
+
+        # Create a spotify redirect URI for the app itself, unless explicitly configured.
+        ip_address = get_ip()
+        redirect_uri = SPOTIFY_REDIRECT_URI or f"http://{ip_address}:{FLASK_PORT}/spotify/auth/callback"
+        logger.info(f"Using Spotify redirect URI: {redirect_uri}")
+
+        now_playing = NowPlaying(spotify_redirect_uri=redirect_uri)
+
+        if 'SpotifyService' in now_playing.services:
+            spotify_svc = now_playing.services['SpotifyService']
+            logger.info("Spotify service initialized")
+
 
 def get_chromecast():
-    global cast, now_playing, spotify_svc
-    if cast is not None:
+    global cast, last_failed_discovery
+    if cast is not None and cast.socket_client.is_connected:
         return cast
 
     with cast_init_lock:
         if cast is not None:
-            return cast
+            if cast.socket_client.is_connected:
+                return cast
+            # Stale connection, e.g. the Chromecast idled off, rebooted or
+            # changed IP overnight. pychromecast cannot reconnect by itself
+            # here because the discovery browser was stopped, so drop the
+            # connection and rediscover.
+            logger.info("Chromecast connection lost, reconnecting")
+            try:
+                cast.disconnect(timeout=5)
+            except Exception as e:
+                logger.debug(f"Error disconnecting stale Chromecast: {e}")
+            cast = None
+
+        if time.time() - last_failed_discovery < DISCOVERY_RETRY_COOLDOWN_SECONDS:
+            return None
 
         logger.debug("Searching for Chromecast devices...")
         browser = None
@@ -59,6 +103,7 @@ def get_chromecast():
                 discovery_timeout=5,
             )
             if not chromecasts:
+                last_failed_discovery = time.time()
                 logger.error(f"Chromecast {CHROMECAST_NAME} not found")
                 return None
 
@@ -66,22 +111,26 @@ def get_chromecast():
             logger.info(f"Found Chromecast: {CHROMECAST_NAME}")
             cast.wait()
 
-            # Create a spotify redirect URI for the app itself, unless explicitly configured.
-            ip_address = get_ip()
-            redirect_uri = SPOTIFY_REDIRECT_URI or f"http://{ip_address}:{FLASK_PORT}/spotify/auth/callback"
-            logger.info(f"Using Spotify redirect URI: {redirect_uri}")
-
-            now_playing = NowPlaying(cast, spotify_redirect_uri=redirect_uri)
-
-            # Initialize Spotify service reference
-            if 'SpotifyService' in now_playing.services:
-                spotify_svc = now_playing.services['SpotifyService']
-                logger.info("Spotify service initialized")
+            init_services()
+            now_playing.set_cast(cast)
         finally:
             if browser is not None:
                 browser.stop_discovery()
 
     return cast
+
+
+def reset_chromecast():
+    """Drop the cached Chromecast connection so the next request reconnects."""
+    global cast
+    with cast_init_lock:
+        if cast is None:
+            return
+        try:
+            cast.disconnect(timeout=5)
+        except Exception as e:
+            logger.debug(f"Error disconnecting Chromecast: {e}")
+        cast = None
 
 
 def get_ip():
@@ -124,21 +173,39 @@ def play_station_route(station):
         logger.error(error_msg)
         return jsonify({'error': error_msg}), 404
 
-    try:
+    # A stale connection can still pass the is_connected check if the drop
+    # has not been noticed by the heartbeat yet, so on failure reconnect
+    # and retry the station once.
+    last_error = f'Error playing {station}'
+    for _ in range(2):
         cast = get_chromecast()
         if not cast:
             error_msg = f'Chromecast {CHROMECAST_NAME} not found'
             logger.error(error_msg)
             return jsonify({'error': error_msg}), 404
 
-        station_info = STATIONS[station]
-        logger.debug(f"Playing station: {station}")
-        mc = cast.media_controller
+        try:
+            return play_station(cast, station)
+        except Exception as e:
+            last_error = f'Error playing {station}: {str(e)}'
+            logger.error(last_error, exc_info=DEBUG)
+            reset_chromecast()
 
-        # For BBC stations, use BBC Sounds cast app directly.
-        if station_info.get('cast_app') == 'bbc_sounds':
-            sounds = BbcSoundsController()
-            cast.register_handler(sounds)
+    return jsonify({'error': last_error}), 500
+
+
+def play_station(cast, station):
+    station_info = STATIONS[station]
+    logger.debug(f"Playing station: {station}")
+    mc = cast.media_controller
+
+    # For BBC stations, use BBC Sounds cast app directly.
+    if station_info.get('cast_app') == 'bbc_sounds':
+        # Register the controller only for the launch and unregister afterwards,
+        # otherwise repeated plays accumulate handlers on the connection.
+        sounds = BbcSoundsController()
+        cast.register_handler(sounds)
+        try:
             sounds.play_media(
                 station_info['url'],
                 station_info.get('media_type', 'application/dash+xml'),
@@ -170,56 +237,54 @@ def play_station_route(station):
                 if player_state in ['PLAYING', 'BUFFERING']:
                     break
                 time.sleep(0.2)
+        finally:
+            cast.unregister_handler(sounds)
 
-            if player_state not in ['PLAYING', 'BUFFERING']:
-                return jsonify({
-                    'error': 'BBC station failed to start playback',
-                    'player_state': player_state,
-                    'idle_reason': idle_reason,
-                }), 502
+        if player_state not in ['PLAYING', 'BUFFERING']:
+            return jsonify({
+                'error': 'BBC station failed to start playback',
+                'player_state': player_state,
+                'idle_reason': idle_reason,
+            }), 502
 
-            track_info = now_playing.to_dict()
-            track_info['success'] = True
-            track_info['message'] = f'Playing {station_info["name"]}'
-            return jsonify(track_info)
-
-        # Non-BBC stations use the standard media app.
-        # Stop current media and disconnect current app to avoid app conflicts.
-        mc.stop()
-        cast.wait()
-        if cast.app_id is not None:
-            cast.quit_app()
-            cast.wait()
-
-        # For other stations (FIP, TalkSport), use standard media player
-        media = {
-            'url': station_info['url'],
-            'title': station_info['name'],
-            'thumb': station_info['image'],
-            'media_type': station_info.get('media_type', 'audio/mp3'),
-            'stream_type': 'LIVE',
-            'metadata_type': 0,
-            'metadata': {
-                'title': station_info['name'],
-                'images': [{'url': station_info['image']}]
-            }
-        }
-
-        logger.debug(f"Media info: {media}")
-        mc.play_media(media['url'], media['media_type'],
-                     title=media['title'],
-                     thumb=media['thumb'],
-                     stream_type=media['stream_type'],
-                     metadata=media['metadata'])
-        mc.block_until_active()
         track_info = now_playing.to_dict()
         track_info['success'] = True
         track_info['message'] = f'Playing {station_info["name"]}'
         return jsonify(track_info)
-    except Exception as e:
-        error_msg = f'Error playing {station}: {str(e)}'
-        logger.error(error_msg, exc_info=True if DEBUG else False)
-        return jsonify({'error': error_msg}), 500
+
+    # Non-BBC stations use the standard media app.
+    # Stop current media and disconnect current app to avoid app conflicts.
+    mc.stop()
+    cast.wait()
+    if cast.app_id is not None:
+        cast.quit_app()
+        cast.wait()
+
+    # For other stations (FIP, TalkSport), use standard media player
+    media = {
+        'url': station_info['url'],
+        'title': station_info['name'],
+        'thumb': station_info['image'],
+        'media_type': station_info.get('media_type', 'audio/mp3'),
+        'stream_type': 'LIVE',
+        'metadata_type': 0,
+        'metadata': {
+            'title': station_info['name'],
+            'images': [{'url': station_info['image']}]
+        }
+    }
+
+    logger.debug(f"Media info: {media}")
+    mc.play_media(media['url'], media['media_type'],
+                 title=media['title'],
+                 thumb=media['thumb'],
+                 stream_type=media['stream_type'],
+                 metadata=media['metadata'])
+    mc.block_until_active()
+    track_info = now_playing.to_dict()
+    track_info['success'] = True
+    track_info['message'] = f'Playing {station_info["name"]}'
+    return jsonify(track_info)
 
 @app.route('/stop')
 def stop_route():
@@ -242,7 +307,7 @@ def stop_route():
         return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error stopping playback: {str(e)}'
-        logger.error(error_msg, exc_info=True if DEBUG else False)
+        logger.error(error_msg, exc_info=DEBUG)
         return jsonify({'error': error_msg}), 500
 
 @app.route('/next')
@@ -318,7 +383,7 @@ def update_playback(action_name):
         return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error updating playback: {str(e)}'
-        logger.error(error_msg, exc_info=True if DEBUG else False)
+        logger.error(error_msg, exc_info=DEBUG)
         return jsonify({'error': error_msg}), 500
 
 @app.route('/now-playing')
@@ -338,7 +403,7 @@ def now_playing_route():
         return jsonify(track_info)
     except Exception as e:
         error_msg = f'Error getting now playing info: {str(e)}'
-        logger.error(error_msg, exc_info=True if DEBUG else False)
+        logger.error(error_msg, exc_info=DEBUG)
         return jsonify({'error': error_msg}), 500
 
 @app.route('/play-random-playlist')
@@ -387,13 +452,13 @@ def play_random_content_route():
 
     except Exception as e:
         error_msg = f'Error playing random Spotify content: {str(e)}'
-        logger.error(error_msg, exc_info=True if DEBUG else False)
+        logger.error(error_msg, exc_info=DEBUG)
         return jsonify({'error': error_msg}), 500
 
 @app.route('/spotify/auth', methods=['GET'])
 def spotify_auth():
     # Get the Spotify authorization URL from the service
-    get_chromecast()  # Ensure Chromecast and services are initialized
+    init_services()
 
     if spotify_svc is None:
         logger.error("Spotify service not initialized")
@@ -412,14 +477,22 @@ def spotify_auth():
 
 @app.route('/spotify/auth/callback', methods=['GET'])
 def spotify_auth_callback():
+    init_services()
     if spotify_svc is None:
-        logging.error("Spotify service not initialized")
+        logger.error("Spotify service not initialized")
         return jsonify({"error": "Spotify service not initialized"}), 500
+
+    # Verify the state parameter to protect against CSRF
+    state = request.args.get('state')
+    if not state or state != spotify_svc.auth_state:
+        logger.error("Spotify auth callback received an invalid state parameter")
+        return jsonify({"error": "Invalid state parameter"}), 400
+    spotify_svc.auth_state = None
 
     # Get the callback parameters
     code = request.args.get('code')
     if not code:
-        logging.error("No authorization code received from Spotify")
+        logger.error("No authorization code received from Spotify")
         error = request.args.get('error', 'Unknown error')
         return jsonify({"error": f"Authorization failed: {error}"}), 400
 
@@ -435,9 +508,9 @@ def spotify_auth_callback():
 @app.route('/spotify/auth-status', methods=['GET'])
 def spotify_auth_status():
     """Check if the user is authenticated with Spotify, without requiring content to be playing"""
-    get_chromecast()
+    init_services()
     if spotify_svc is None:
-        logging.error("Spotify service not initialized")
+        logger.error("Spotify service not initialized")
         return jsonify({"error": "Spotify service not initialized"}), 500
 
     # Only check authentication status
@@ -527,4 +600,9 @@ def restart_service_route():
 # Run the app
 if __name__ == '__main__':
     logger.info(f"Starting server on port {FLASK_PORT}")
-    app.run(host='0.0.0.0', port=FLASK_PORT, debug=DEBUG)
+    if DEBUG:
+        # Werkzeug dev server with reloader and debugger for development only
+        app.run(host='0.0.0.0', port=FLASK_PORT, debug=True)
+    else:
+        from waitress import serve
+        serve(app, host='0.0.0.0', port=FLASK_PORT)
