@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, redirect, request
 import pychromecast
+from pychromecast.error import RequestFailed, RequestTimeout
 import os
 import logging
 import socket
@@ -253,12 +254,11 @@ def play_station(cast, station):
         return jsonify(track_info)
 
     # Non-BBC stations use the standard media app.
-    # Stop current media and disconnect current app to avoid app conflicts.
-    mc.stop()
-    cast.wait()
+    # Quit the current app (which also stops its media) to avoid app conflicts.
+    # A separate media STOP is unreliable: some receivers never answer it and
+    # it fails outright when nothing is playing.
     if cast.app_id is not None:
         cast.quit_app()
-        cast.wait()
 
     # For other stations (FIP, TalkSport), use standard media player
     media = {
@@ -280,7 +280,7 @@ def play_station(cast, station):
                  thumb=media['thumb'],
                  stream_type=media['stream_type'],
                  metadata=media['metadata'])
-    mc.block_until_active()
+    mc.block_until_active(timeout=10)
     track_info = now_playing.to_dict()
     track_info['success'] = True
     track_info['message'] = f'Playing {station_info["name"]}'
@@ -296,10 +296,10 @@ def stop_route():
             return jsonify({'error': error_msg}), 404
 
         logger.debug("Stopping playback")
-        mc = cast.media_controller
-        mc.stop()
-        cast.quit_app()
-        cast.wait()
+        # Quitting the app stops its media too; a separate media STOP is
+        # unreliable because some receivers never answer it.
+        if cast.app_id is not None:
+            cast.quit_app()
         now_playing.clear_current_track()
         track_info = now_playing.to_dict()
         track_info['success'] = True
@@ -351,9 +351,15 @@ def update_playback(action_name):
         if action is None:
             return jsonify({'error': 'Invalid playback action'}), 400
 
-        # Perform the action
-        action()
-        cast.wait()
+        # Perform the action. Timeouts and failures are not fatal: the
+        # receiver may act without answering (timeout) or there may be no
+        # media session (failed); either way report the verified state below.
+        try:
+            action(timeout=5)
+        except RequestTimeout:
+            logger.debug(f"{action_name} request timed out, verifying state")
+        except RequestFailed as e:
+            logger.debug(f"{action_name} request failed: {e}")
 
         # Wait up to 1 second for state to change
         max_attempts = 10
